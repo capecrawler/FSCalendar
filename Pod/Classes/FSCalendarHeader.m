@@ -47,6 +47,9 @@
 
 - (void)initialize
 {
+    
+    self.clipsToBounds = YES;
+    
     _dateFormat               = @"MMMM yyyy";
     _dateFormatter            = [[NSDateFormatter alloc] init];
     _dateFormatter.dateFormat = _dateFormat;
@@ -64,9 +67,11 @@
     UICollectionView *collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:_collectionViewFlowLayout];
     collectionView.scrollEnabled = NO;
     collectionView.userInteractionEnabled = NO;
+    collectionView.pagingEnabled = YES;
     collectionView.backgroundColor = [UIColor clearColor];
     collectionView.dataSource = self;
     collectionView.delegate = self;
+    collectionView.clipsToBounds = NO;
     [self addSubview:collectionView];
     [collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:@"cell"];
     self.collectionView = collectionView;
@@ -76,7 +81,7 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    _collectionView.frame = self.bounds;
+    _collectionView.frame = CGRectInset(self.bounds, (self.fs_width * 0.25), 0);
     _collectionView.contentInset = UIEdgeInsetsZero;
     _collectionViewFlowLayout.itemSize = CGSizeMake(self.fs_width * 0.5,
                                                     self.fs_height);
@@ -122,7 +127,7 @@
     if (_scrollOffset != scrollOffset) {
         _scrollOffset = scrollOffset;
         if (self.scrollDirection == UICollectionViewScrollDirectionHorizontal) {
-            _collectionView.contentOffset = CGPointMake((_scrollOffset-0.5)*_collectionViewFlowLayout.itemSize.width, 0);
+            _collectionView.contentOffset = CGPointMake(_scrollOffset*_collectionViewFlowLayout.itemSize.width, 0);
         } else {
             _collectionView.contentOffset = CGPointMake(0, _scrollOffset * _collectionViewFlowLayout.itemSize.height);
         }

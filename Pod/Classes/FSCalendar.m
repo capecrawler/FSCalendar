@@ -187,7 +187,9 @@
         [obj setFrame:CGRectMake(idx*width, 0, width, height)];
     }];
     [self adjustTitleIfNecessary];
+    NSLog(@"scroll to date called: month: %@", _currentMonth);
     [self scrollToDate:_currentMonth];
+    
 }
 
 - (void)layoutSublayersOfLayer:(CALayer *)layer
@@ -246,8 +248,8 @@
 
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    FSCalendarCell *cell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    return [self shouldSelectDate:cell.date] && ![[collectionView indexPathsForSelectedItems] containsObject:indexPath] && ![self isDatePlaceHolder:cell.date];
+    NSDate * date = [self dateForIndexPath:indexPath];
+    return [self shouldSelectDate:date] && ![[collectionView indexPathsForSelectedItems] containsObject:indexPath];
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didDeselectItemAtIndexPath:(NSIndexPath *)indexPath
@@ -325,7 +327,6 @@
 
 - (void)setSelectedDate:(NSDate *)selectedDate animate:(BOOL)animate
 {
-    
     NSIndexPath *selectedIndexPath = [self indexPathForDate:selectedDate];
     if (![_selectedDate fs_isEqualToDateForDay:selectedDate] && [self collectionView:_collectionView shouldSelectItemAtIndexPath:selectedIndexPath]) {
         NSIndexPath *currentIndex = [_collectionView indexPathsForSelectedItems].lastObject;
@@ -333,9 +334,11 @@
         [self collectionView:_collectionView didDeselectItemAtIndexPath:currentIndex];
         [_collectionView selectItemAtIndexPath:selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
         [self collectionView:_collectionView didSelectItemAtIndexPath:selectedIndexPath];
-    }
-    if (!_collectionView.tracking && !_collectionView.decelerating && ![_currentMonth fs_isEqualToDateForMonth:_selectedDate]) {
-        [self scrollToDate:selectedDate animate:animate];
+        
+        if (!_collectionView.tracking && !_collectionView.decelerating && ![_currentMonth fs_isEqualToDateForMonth:_selectedDate]) {
+            NSLog(@"scroll to date called");
+            [self scrollToDate:selectedDate animate:animate];
+        }
     }
 }
 
@@ -346,6 +349,7 @@
         _currentDate = [currentDate copy];
         _currentMonth = [currentDate copy];
         dispatch_async(dispatch_get_main_queue(), ^{
+            NSLog(@"set current date");
             [self scrollToDate:_currentDate];
         });
     }
@@ -720,6 +724,7 @@
         NSInteger rows = vItem/7;
         NSInteger columns = vItem%7;
         item = columns*6 + rows;
+        
     } else if (self.flow == FSCalendarFlowVertical) {
         item = [date fs_daysFrom:firstDateOfPage];
     }
