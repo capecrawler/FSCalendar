@@ -83,7 +83,9 @@
     _collectionView.contentInset = UIEdgeInsetsZero;
     _collectionViewFlowLayout.itemSize = CGSizeMake(self.fs_width * 0.5,
                                                     self.fs_height);
-    if (self.scrollDirection == UICollectionViewScrollDirectionHorizontal){
+    if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
+        _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, self.fs_width*0.25, 0, self.fs_width*0.25);
+    } else {
         CGFloat inset = (_collectionView.bounds.size.width / 2.0) - (_collectionViewFlowLayout.itemSize.width/2.0);
         _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, inset, 0, inset);
     }
@@ -173,7 +175,8 @@
         if (scrollDirection == UICollectionViewScrollDirectionVertical) {
             _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, self.fs_width*0.25, 0, self.fs_width*0.25);
         } else {
-            _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, self.fs_width*0.25, 0, self.fs_width*0.25);
+            CGFloat inset = (_collectionView.bounds.size.width / 2.0) - (_collectionViewFlowLayout.itemSize.width/2.0);
+            _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, inset, 0, inset);
         }
         [_collectionView reloadData];
     }
