@@ -63,8 +63,8 @@
     self.collectionViewFlowLayout = collectionViewFlowLayout;
     
     UICollectionView *collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:_collectionViewFlowLayout];
-    collectionView.scrollEnabled = YES;
-    collectionView.userInteractionEnabled = YES;
+    collectionView.scrollEnabled = NO;
+    collectionView.userInteractionEnabled = NO;
     collectionView.backgroundColor = [UIColor clearColor];
     collectionView.dataSource = self;
     collectionView.delegate = self;
