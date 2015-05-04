@@ -47,9 +47,6 @@
 
 - (void)initialize
 {
-    
-    self.clipsToBounds = YES;
-    
     _dateFormat               = @"MMMM yyyy";
     _dateFormatter            = [[NSDateFormatter alloc] init];
     _dateFormatter.dateFormat = _dateFormat;
@@ -57,21 +54,20 @@
     _scrollDirection          = UICollectionViewScrollDirectionHorizontal;
     _minimumDate              = [NSDate fs_dateWithYear:1970 month:1 day:1];
     _maximumDate              = [NSDate fs_dateWithYear:2099 month:12 day:31];
-    
+
     UICollectionViewFlowLayout *collectionViewFlowLayout = [[UICollectionViewFlowLayout alloc] init];
     collectionViewFlowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
     collectionViewFlowLayout.minimumInteritemSpacing = 0;
     collectionViewFlowLayout.minimumLineSpacing = 0;
+
     self.collectionViewFlowLayout = collectionViewFlowLayout;
     
     UICollectionView *collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:_collectionViewFlowLayout];
-    collectionView.scrollEnabled = NO;
-    collectionView.userInteractionEnabled = NO;
-    collectionView.pagingEnabled = YES;
+    collectionView.scrollEnabled = YES;
+    collectionView.userInteractionEnabled = YES;
     collectionView.backgroundColor = [UIColor clearColor];
     collectionView.dataSource = self;
     collectionView.delegate = self;
-    collectionView.clipsToBounds = NO;
     [self addSubview:collectionView];
     [collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:@"cell"];
     self.collectionView = collectionView;
@@ -81,10 +77,16 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    _collectionView.frame = CGRectInset(self.bounds, (self.fs_width * 0.25), 0);
+
+    _collectionView.frame = self.bounds;
     _collectionView.contentInset = UIEdgeInsetsZero;
     _collectionViewFlowLayout.itemSize = CGSizeMake(self.fs_width * 0.5,
                                                     self.fs_height);
+    if (self.scrollDirection == UICollectionViewScrollDirectionHorizontal){
+        CGFloat inset = (_collectionView.bounds.size.width / 2.0) - (_collectionViewFlowLayout.itemSize.width/2.0);
+        _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, inset, 0, inset);
+    }
+    
     CGFloat scrollOffset = self.scrollOffset;
     _scrollOffset = -1;
     self.scrollOffset = scrollOffset;
@@ -163,14 +165,14 @@
         _scrollDirection = scrollDirection;
         _collectionViewFlowLayout.scrollDirection = scrollDirection;
         CGPoint newOffset = CGPointMake(
-                                        scrollDirection == UICollectionViewScrollDirectionHorizontal ? (_scrollOffset-0.5)*_collectionViewFlowLayout.itemSize.width : 0,
+                                        scrollDirection == UICollectionViewScrollDirectionHorizontal ? _scrollOffset*_collectionViewFlowLayout.itemSize.width : 0,
                                         scrollDirection == UICollectionViewScrollDirectionVertical ? _scrollOffset * _collectionViewFlowLayout.itemSize.height : 0
                                         );
         _collectionView.contentOffset = newOffset;
         if (scrollDirection == UICollectionViewScrollDirectionVertical) {
             _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, self.fs_width*0.25, 0, self.fs_width*0.25);
         } else {
-            _collectionViewFlowLayout.sectionInset = UIEdgeInsetsZero;
+            _collectionViewFlowLayout.sectionInset = UIEdgeInsetsMake(0, self.fs_width*0.25, 0, self.fs_width*0.25);
         }
         [_collectionView reloadData];
     }
