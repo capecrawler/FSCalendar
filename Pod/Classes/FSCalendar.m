@@ -187,7 +187,6 @@
         [obj setFrame:CGRectMake(idx*width, 0, width, height)];
     }];
     [self adjustTitleIfNecessary];
-    NSLog(@"scroll to date called: month: %@", _currentMonth);
     [self scrollToDate:_currentMonth];
     
 }
@@ -336,7 +335,6 @@
         [self collectionView:_collectionView didSelectItemAtIndexPath:selectedIndexPath];
         
         if (!_collectionView.tracking && !_collectionView.decelerating && ![_currentMonth fs_isEqualToDateForMonth:_selectedDate]) {
-            NSLog(@"scroll to date called");
             [self scrollToDate:selectedDate animate:animate];
         }
     }
@@ -349,7 +347,6 @@
         _currentDate = [currentDate copy];
         _currentMonth = [currentDate copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            NSLog(@"set current date");
             [self scrollToDate:_currentDate];
         });
     }
