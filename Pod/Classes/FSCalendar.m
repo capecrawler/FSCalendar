@@ -236,11 +236,27 @@
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     FSCalendarCell *cell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    if ([self shouldSelectDate:cell.date]){
-        if (!cell.isPlaceholder) {
-            [cell showAnimation];
-            _selectedDate = [self dateForIndexPath:indexPath];
-            [self didSelectDate:_selectedDate];
+    if (cell == nil)
+    {
+        NSDate * date = [self dateForIndexPath:indexPath];
+        NSDate * month = [_minimumDate fs_dateByAddingMonths:indexPath.section];
+        if ([self shouldSelectDate:date])
+        {
+            if ([date fs_isEqualToDateForMonth:month])
+            {
+                _selectedDate = [self dateForIndexPath:indexPath];
+                [self didSelectDate:_selectedDate];
+            }
+        }
+    }else{
+        if ([self shouldSelectDate:cell.date])
+        {
+            if (!cell.isPlaceholder)
+            {
+                [cell showAnimation];
+                _selectedDate = [self dateForIndexPath:indexPath];
+                [self didSelectDate:_selectedDate];
+            }
         }
     }
 }
@@ -343,23 +359,29 @@
 
 - (void)setCurrentDate:(NSDate *)currentDate
 {
-    if (![_currentDate fs_isEqualToDateForDay:currentDate]) {
-        _currentDate = [currentDate copy];
-        _currentMonth = [currentDate copy];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self scrollToDate:_currentDate];
-        });
+    if ([currentDate fs_isBetween:_minimumDate andDate:_maximumDate])
+    {
+        if (![_currentDate fs_isEqualToDateForDay:currentDate]) {
+            _currentDate = [currentDate copy];
+            _currentMonth = [currentDate copy];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self scrollToDate:_currentDate];
+            });
+        }
     }
 }
 
 - (void)setCurrentMonth:(NSDate *)currentMonth
 {
-    if (![_currentMonth fs_isEqualToDateForMonth:currentMonth]) {
-        _currentMonth = [currentMonth copy];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self scrollToDate:_currentMonth];
-            [self currentMonthDidChange];
-        });
+    if ([currentMonth fs_isBetween:_minimumDate andDate:_maximumDate])
+    {
+        if (![_currentMonth fs_isEqualToDateForMonth:currentMonth]) {
+            _currentMonth = [currentMonth copy];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self scrollToDate:_currentMonth];
+                [self currentMonthDidChange];
+            });
+        }
     }
 }
 
@@ -669,8 +691,6 @@
     [self reloadData:selectedPath];
 }
 
-#pragma mark - Private
-
 - (void)scrollToDate:(NSDate *)date
 {
     [self scrollToDate:date animate:NO];
@@ -678,17 +698,26 @@
 
 - (void)scrollToDate:(NSDate *)date animate:(BOOL)animate
 {
-    NSInteger scrollOffset = [date fs_monthsFrom:_minimumDate];
-    _supressEvent = !animate;
-    if (self.flow == FSCalendarFlowHorizontal) {
-        [_collectionView setContentOffset:CGPointMake(scrollOffset * _collectionView.fs_width, 0) animated:animate];
-    } else if (self.flow == FSCalendarFlowVertical) {
-        [_collectionView setContentOffset:CGPointMake(0, scrollOffset * _collectionView.fs_height) animated:animate];
-    }
-    if (_header && !animate) {
-        _header.scrollOffset = scrollOffset;
+    if ([date fs_isBetween:_minimumDate andDate:_maximumDate])
+    {
+        NSInteger scrollOffset = [date fs_monthsFrom:_minimumDate];
+        _supressEvent = !animate;
+        if (self.flow == FSCalendarFlowHorizontal) {
+            [_collectionView setContentOffset:CGPointMake(scrollOffset * _collectionView.fs_width, 0) animated:animate];
+        } else if (self.flow == FSCalendarFlowVertical) {
+            [_collectionView setContentOffset:CGPointMake(0, scrollOffset * _collectionView.fs_height) animated:animate];
+        }
+        if (_header && !animate) {
+            _header.scrollOffset = scrollOffset;
+        }
+    }else{
+        NSAssert(NO, @"Date out of bounds");
     }
 }
+
+
+#pragma mark - Private
+
 
 - (NSDate *)dateForIndexPath:(NSIndexPath *)indexPath
 {
@@ -741,7 +770,8 @@
 
 - (BOOL)shouldSelectDate:(NSDate *)date
 {
-    if ([date fs_isBetween:_minimumDate andDate:_maximumDate]){
+    if ([date fs_isBetween:_minimumDate andDate:_maximumDate])
+    {
         if (_delegate && [_delegate respondsToSelector:@selector(calendar:shouldSelectDate:)]) {
             return [_delegate calendar:self shouldSelectDate:date];
         }

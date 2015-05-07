@@ -37,8 +37,9 @@
 //    _calendar.currentMonth = [NSDate fs_dateWithYear:2015 month:2 day:1];
     
     _calendar.minimumDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
-    _calendar.maximumDate = [NSDate fs_dateWithYear:2015 month:7 day:6];
+    _calendar.maximumDate = [NSDate fs_dateWithYear:2015 month:5 day:6];
     _calendar.currentDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
+    _calendar.selectedDate = [NSDate new];
     
 }
 

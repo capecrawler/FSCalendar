@@ -87,14 +87,14 @@
 
 - (NSDate *) fs_dateElement{
     unsigned unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit |  NSDayCalendarUnit;
-    NSCalendar* calendar = [NSCalendar currentCalendar];
+    NSCalendar* calendar = [NSCalendar fs_sharedCalendar];
     NSDateComponents * selfComponents = [calendar components:unitFlags fromDate:self];
     return [calendar dateFromComponents:selfComponents];
 }
 
 - (NSDate *) fs_timeElement{
     unsigned unitFlags = NSHourCalendarUnit | NSMinuteCalendarUnit |  NSSecondCalendarUnit | NSTimeZoneCalendarUnit;
-    NSCalendar* calendar = [NSCalendar currentCalendar];
+    NSCalendar* calendar = [NSCalendar fs_sharedCalendar];
     NSDateComponents * selfComponents = [calendar components:unitFlags fromDate:self];
     return [calendar dateFromComponents:selfComponents];
 }
@@ -222,11 +222,6 @@
 
 - (BOOL) fs_isBetween: (NSDate *) earlierDate andDate: (NSDate *) laterDate{
     
-    unsigned unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit |  NSDayCalendarUnit;
-    NSCalendar* calendar = [NSCalendar fs_sharedCalendar];
-    
-    NSDateComponents * selfComponents = [calendar components:unitFlags fromDate:self];
-    [calendar dateFromComponents:selfComponents];
     NSDate * selfDateComponents = [self fs_dateElement];
     NSDate * beginDateComponents = [earlierDate fs_dateElement];
     NSDate * endDateComponents = [laterDate fs_dateElement];
