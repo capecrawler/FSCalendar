@@ -36,7 +36,7 @@
         UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         titleLabel.textAlignment = NSTextAlignmentCenter;
-        titleLabel.font = [UIFont systemFontOfSize:15];
+        titleLabel.font = [UIFont systemFontOfSize:16];
         titleLabel.textColor = [UIColor darkTextColor];
         [self.contentView addSubview:titleLabel];
         self.titleLabel = titleLabel;
@@ -171,12 +171,15 @@
     }
     if (self.isToday) {
         UIColor * currentDayColor = dictionary[@(FSCalendarCellStateToday)];
-        if (self.isPlaceholder){
-            currentDayColor = [currentDayColor colorWithAlphaComponent:0.8];
+        if (self.isPlaceholder || !self.enabled){
+            currentDayColor = [currentDayColor colorWithAlphaComponent:0.6];
         }
         return currentDayColor;
     }
-    if (self.isPlaceholder || !self.enabled) {
+    if (!self.enabled){        
+        return dictionary[@(FSCalendarCellStateDisabled)];
+    }
+    if (self.isPlaceholder) {
         return dictionary[@(FSCalendarCellStatePlaceholder)];
     }
     if (self.isWeekend && [[dictionary allKeys] containsObject:@(FSCalendarCellStateWeekend)]) {

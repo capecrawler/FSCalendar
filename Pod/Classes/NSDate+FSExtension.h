@@ -20,6 +20,10 @@
 @property (readonly, nonatomic) NSInteger fs_second;
 
 @property (readonly, nonatomic) NSInteger fs_numberOfDaysInMonth;
+@property (readonly, nonatomic) NSInteger fs_lastDayForTheMonth;
+
+@property (readonly, nonatomic) NSDate * fs_dateElement;
+@property (readonly, nonatomic) NSDate * fs_timeElement;
 
 - (NSDate *)fs_dateByAddingYears:(NSInteger)years;
 - (NSDate *)fs_dateBySubtractingYears:(NSInteger)years;
@@ -42,5 +46,14 @@
 
 + (instancetype)fs_dateFromString:(NSString *)string format:(NSString *)format;
 + (instancetype)fs_dateWithYear:(NSInteger)year month:(NSInteger)month day:(NSInteger)day;
+
+- (NSDate *)fs_setDayOfDate: (NSInteger) day;
+- (NSDate *)fs_setMonthOfDate: (NSInteger) month;
+- (NSDate *)fs_setYearOfDate: (NSInteger) year;
+- (BOOL) fs_isBetween: (NSDate *) earlierDate andDate: (NSDate *) laterDate;
+
+- (NSDate *)fs_clampDateToComponents:(NSUInteger)unitFlags;
+
+
 
 @end

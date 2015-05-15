@@ -36,9 +36,16 @@
 //    _calendar.flow = FSCalendarFlowVertical;
 //    _calendar.currentMonth = [NSDate fs_dateWithYear:2015 month:2 day:1];
     
-    _calendar.minimumDate = [NSDate fs_dateWithYear:2015 month:1 day:1];
-    _calendar.maximumDate = [NSDate fs_dateWithYear:2015 month:12 day:1];
+    _calendar.minimumDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
+    _calendar.maximumDate = [NSDate fs_dateWithYear:2015 month:5 day:6];
+    _calendar.currentDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
+    _calendar.selectedDate = [NSDate new];
     
+}
+
+- (void) viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [_calendar reloadData];
 }
 
 #pragma mark - FSCalendarDataSource
@@ -130,6 +137,7 @@
                 [_calendar setHeaderDateFormat:@"MMMM yyyy"];
                 [_calendar setMinDissolvedAlpha:0.2];
                 [_calendar setTodayColor:kPink];
+                [_calendar setTitleDisabledColor:[UIColor lightGrayColor]];
                 [_calendar setCellStyle:FSCalendarCellStyleCircle];
                 break;
             }
@@ -142,6 +150,7 @@
                 [_calendar setHeaderDateFormat:@"yyyy-MM"];
                 [_calendar setMinDissolvedAlpha:1.0];
                 [_calendar setTodayColor:[UIColor redColor]];
+                [_calendar setTitleDisabledColor:[UIColor redColor]];
                 [_calendar setCellStyle:FSCalendarCellStyleCircle];
                 break;
             }
@@ -154,6 +163,7 @@
                 [_calendar setHeaderDateFormat:@"yyyy/MM"];
                 [_calendar setMinDissolvedAlpha:1.0];
                 [_calendar setCellStyle:FSCalendarCellStyleRectangle];
+                [_calendar setTitleDisabledColor:[UIColor lightGrayColor]];
                 [_calendar setTodayColor:[UIColor orangeColor]];
                 break;
             }
@@ -188,6 +198,8 @@
 - (void)setSelectedDate:(NSDate *)selectedDate
 {
     _calendar.selectedDate = selectedDate;
+//    [_calendar setSelectedDate:selectedDate animate:YES];
+    
 }
 
 - (void)setFirstWeekday:(NSUInteger)firstWeekday

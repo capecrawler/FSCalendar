@@ -88,19 +88,23 @@ typedef NS_OPTIONS(NSInteger, FSCalendarCellState) {
 @property (strong, nonatomic) UIColor  *titleSelectionColor      UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *titleTodayColor          UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *titlePlaceholderColor    UI_APPEARANCE_SELECTOR;
+@property (strong, nonatomic) UIColor  *titleDisabledColor       UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *titleWeekendColor        UI_APPEARANCE_SELECTOR;
 
 @property (strong, nonatomic) UIColor  *subtitleDefaultColor     UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *subtitleSelectionColor   UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *subtitleTodayColor       UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *subtitlePlaceholderColor UI_APPEARANCE_SELECTOR;
+@property (strong, nonatomic) UIColor  *subtitleDisabledColor    UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *subtitleWeekendColor     UI_APPEARANCE_SELECTOR;
 
 @property (strong, nonatomic) UIColor  *selectionColor           UI_APPEARANCE_SELECTOR;
 @property (strong, nonatomic) UIColor  *todayColor               UI_APPEARANCE_SELECTOR;
 
 - (void)reloadData;
-
+- (void)setSelectedDate:(NSDate *)selectedDate animate:(BOOL)animate;
+- (void)scrollToDate:(NSDate *)date;
+- (void)scrollToDate:(NSDate *)date animate:(BOOL)animate;
 @end
 
 
