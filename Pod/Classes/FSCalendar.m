@@ -42,8 +42,9 @@
 @property (weak  , nonatomic) UICollectionView           *collectionView;
 @property (weak  , nonatomic) UICollectionViewFlowLayout *collectionViewFlowLayout;
 
-@property (copy  , nonatomic) NSDate                     *minimumDate;
-@property (copy  , nonatomic) NSDate                     *maximumDate;
+@property (copy  , readwrite, nonatomic) NSDate          *minimumDate;
+@property (copy  , readwrite, nonatomic) NSDate          *maximumDate;
+@property (copy  , readwrite, nonatomic) NSDate          *currentMonth;
 
 @property (assign, nonatomic) BOOL                       supressEvent;
 
@@ -52,12 +53,6 @@
 
 - (NSDate *)dateForIndexPath:(NSIndexPath *)indexPath;
 - (NSIndexPath *)indexPathForDate:(NSDate *)date;
-
-- (void)scrollToDate:(NSDate *)date;
-- (void)scrollToDate:(NSDate *)date animate:(BOOL)animate;
-
-- (void)setSelectedDate:(NSDate *)selectedDate animate:(BOOL)animate;
-
 - (BOOL)isDateInRange:(NSDate *)date;
 
 @end
@@ -131,8 +126,8 @@
     [self addSubview:collectionView];
     self.collectionView = collectionView;
     
-    _currentDate = [[NSDate date] fs_clampDateToComponents: (NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit)];
-    _currentMonth = [_currentDate copy];
+    _today = [NSDate date];
+    _currentMonth = [_today copy];
     
     _backgroundColors = [NSMutableDictionary dictionaryWithCapacity:4];
     _backgroundColors[@(FSCalendarCellStateNormal)]      = [UIColor clearColor];
@@ -168,6 +163,7 @@
     bottomBorderLayer.backgroundColor = _topBorderLayer.backgroundColor;
     [self.layer addSublayer:bottomBorderLayer];
     self.bottomBorderLayer = bottomBorderLayer;
+    
 
 }
 
@@ -196,8 +192,8 @@
     [self adjustTitleIfNecessary];
     NSDate *maximumDate = self.maximumDate;
     NSDate *minimumDate = self.minimumDate;
-    if ([maximumDate fs_daysFrom:minimumDate] <= 0) {
-        [NSException raise:@"maximumDate must be later than minimumDate" format:nil];
+    if ([maximumDate fs_daysFrom:minimumDate] < 0) {
+        [NSException raise:@"maximumDate must be later than or equal to minimumDate" format:nil];
     }
     if (_header) {
         [_header setValue:minimumDate forKey:@"minimumDate"];
@@ -220,7 +216,7 @@
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
 {
-    return [_maximumDate fs_monthsFrom:_minimumDate] + 1;
+    return [self.maximumDate fs_monthsFrom:self.minimumDate] + 1;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
@@ -237,8 +233,8 @@
     cell.backgroundColors   = self.backgroundColors;
     cell.eventColor         = self.eventColor;
     cell.cellStyle          = self.cellStyle;
-    cell.month              = [_minimumDate fs_dateByAddingMonths:indexPath.section];
-    cell.currentDate        = self.currentDate;
+    cell.month              = [self.minimumDate fs_dateByAddingMonths:indexPath.section];
+    cell.currentDate        = self.today;
     cell.titleLabel.font    = _titleFont;
     cell.subtitleLabel.font = _subtitleFont;
     cell.date               = [self dateForIndexPath:indexPath];
@@ -251,15 +247,17 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    
     FSCalendarCell *cell = (FSCalendarCell *)[collectionView cellForItemAtIndexPath:indexPath];
     if (cell == nil)
     {
         NSDate * date = [self dateForIndexPath:indexPath];
-        NSDate * month = [_minimumDate fs_dateByAddingMonths:indexPath.section];
+        NSDate * month = [self.minimumDate fs_dateByAddingMonths:indexPath.section];
         if ([self shouldSelectDate:date])
         {
             if ([date fs_isEqualToDateForMonth:month])
             {
+                [cell showAnimation];                
                 _selectedDate = [self dateForIndexPath:indexPath];
                 [self didSelectDate:_selectedDate];
             }
@@ -280,7 +278,9 @@
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     NSDate * date = [self dateForIndexPath:indexPath];
-    return [self shouldSelectDate:date] && ![[collectionView indexPathsForSelectedItems] containsObject:indexPath];
+    NSDate * month = [self.minimumDate fs_dateByAddingMonths:indexPath.section];
+    return [self shouldSelectDate:date] && ![[collectionView indexPathsForSelectedItems] containsObject:indexPath] && [date fs_isEqualToDateForMonth:month];
+    
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didDeselectItemAtIndexPath:(NSIndexPath *)indexPath
@@ -301,7 +301,7 @@
     }
     CGFloat scrollOffset = MAX(scrollView.contentOffset.x/scrollView.fs_width,
                                scrollView.contentOffset.y/scrollView.fs_height);
-    NSDate *currentMonth = [_minimumDate fs_dateByAddingMonths:round(scrollOffset)];
+    NSDate *currentMonth = [self.minimumDate fs_dateByAddingMonths:round(scrollOffset)];
     if (![_currentMonth fs_isEqualToDateForMonth:currentMonth]) {
         _currentMonth = [currentMonth copy];
         [self currentMonthDidChange];
@@ -355,20 +355,25 @@
 
 - (void)setSelectedDate:(NSDate *)selectedDate
 {
-    if (![self isDateInRange:selectedDate]) {
-        [NSException raise:@"selectedDate out of range" format:nil];
-    }
     [self setSelectedDate:selectedDate animate:NO];
 }
 
 - (void)setSelectedDate:(NSDate *)selectedDate animate:(BOOL)animate
 {
-    selectedDate = [selectedDate fs_daysFrom:_minimumDate] < 0 ? [NSDate fs_dateWithYear:_minimumDate.fs_year month:_minimumDate.fs_month day:selectedDate.fs_day] : selectedDate;
-    selectedDate = [selectedDate fs_daysFrom:_maximumDate] > 0 ? [NSDate fs_dateWithYear:_maximumDate.fs_year month:_maximumDate.fs_month day:selectedDate.fs_day] : selectedDate;
+    if (![self isDateInRange:selectedDate]) {
+        [[NSException exceptionWithName:@"DateOutOfBoundsException" reason:@"selectedDate out of range." userInfo:nil] raise];
+    }
+    
+    selectedDate = [selectedDate fs_daysFrom:self.minimumDate] < 0 ? [NSDate fs_dateWithYear:self.minimumDate.fs_year month:self.minimumDate.fs_month day:selectedDate.fs_day] : selectedDate;
+    selectedDate = [selectedDate fs_daysFrom:self.maximumDate] > 0 ? [NSDate fs_dateWithYear:self.maximumDate.fs_year month:self.maximumDate.fs_month day:selectedDate.fs_day] : selectedDate;
     NSIndexPath *selectedIndexPath = [self indexPathForDate:selectedDate];
     if ([self collectionView:_collectionView shouldSelectItemAtIndexPath:selectedIndexPath]) {
         [_collectionView selectItemAtIndexPath:selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
         [self collectionView:_collectionView didSelectItemAtIndexPath:selectedIndexPath];
+        
+        if (!_collectionView.tracking && !_collectionView.decelerating && ![_currentMonth fs_isEqualToDateForMonth:_selectedDate]) {
+            [self scrollToDate:selectedDate animate:animate];
+        }
     }
     if (!_collectionView.tracking && !_collectionView.decelerating && ![_currentMonth fs_isEqualToDateForMonth:selectedDate]) {
         [self scrollToDate:selectedDate animate:animate];
@@ -376,24 +381,25 @@
 }
 
 
-- (void)setCurrentDate:(NSDate *)currentDate
+- (void)setToday:(NSDate *)today
 {
-    if (![self isDateInRange:currentDate]) {
-        [NSException raise:@"currentDate out of range" format:nil];
+    if (![self isDateInRange:today]) {
+        [[NSException exceptionWithName:@"DateOutOfBoundsException" reason:@"currentDate out of range." userInfo:nil]raise];
     }
-    if (![_currentDate fs_isEqualToDateForDay:currentDate]) {
-        _currentDate = [currentDate copy];
-        _currentMonth = [currentDate copy];
+    if (![_today fs_isEqualToDateForDay:today]) {
+        _today = [today copy];
+        _currentMonth = [today copy];
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self scrollToDate:_currentDate];
+            [self scrollToDate:_today];
         });
     }
 }
 
+/*
 - (void)setCurrentMonth:(NSDate *)currentMonth
 {
     if (![self isDateInRange:currentMonth]) {
-        [NSException raise:@"currentMonth out of range" format:nil];
+        [[NSException exceptionWithName:@"DateOutOfBoundsException" reason:@"currentMonth out of range." userInfo:nil] raise[;
     }
     if (![_currentMonth fs_isEqualToDateForMonth:currentMonth]) {
         _currentMonth = [currentMonth copy];
@@ -403,7 +409,8 @@
         });
     }
 }
-
+*/
+ 
 - (void)setWeekdayFont:(UIFont *)weekdayFont
 {
     if (_weekdayFont != weekdayFont) {
@@ -708,6 +715,8 @@
 
 - (void)reloadData
 {
+    _minimumDate = nil;
+    _maximumDate = nil;
     NSIndexPath *selectedPath = [_collectionView indexPathsForSelectedItems].lastObject;
     [self reloadData:selectedPath];
 }
@@ -719,28 +728,38 @@
 
 - (void)scrollToDate:(NSDate *)date animate:(BOOL)animate
 {
-    _supressEvent = !animate;
-    date = [date fs_daysFrom:_minimumDate] < 0 ? [NSDate fs_dateWithYear:_minimumDate.fs_year month:_minimumDate.fs_month day:date.fs_day] : date;
-    date = [date fs_daysFrom:_maximumDate] > 0 ? [NSDate fs_dateWithYear:_maximumDate.fs_year month:_maximumDate.fs_month day:date.fs_day] : date;
-    NSInteger scrollOffset = [date fs_monthsFrom:_minimumDate];
-    if (self.flow == FSCalendarFlowHorizontal) {
-        [_collectionView setContentOffset:CGPointMake(scrollOffset * _collectionView.fs_width, 0) animated:animate];
-    } else if (self.flow == FSCalendarFlowVertical) {
-        [_collectionView setContentOffset:CGPointMake(0, scrollOffset * _collectionView.fs_height) animated:animate];
+    if (![self isDateInRange:date]) {
+        [[NSException exceptionWithName:@"DateOutOfBoundsException" reason:@"scrollToDate out of range." userInfo:nil]raise];
     }
-    if (_header && !animate) {
-        _header.scrollOffset = scrollOffset;
+    
+    if (![_currentMonth fs_isEqualToDateForMonth:date]) {
+        _currentMonth = [date copy];
+        date = [date fs_daysFrom:self.minimumDate] < 0 ? [NSDate fs_dateWithYear:self.minimumDate.fs_year month:self.minimumDate.fs_month day:date.fs_day] : date;
+        date = [date fs_daysFrom:self.maximumDate] > 0 ? [NSDate fs_dateWithYear:self.maximumDate.fs_year month:self.maximumDate.fs_month day:date.fs_day] : date;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _supressEvent = !animate;
+            NSInteger scrollOffset = [date fs_monthsFrom:self.minimumDate];
+            if (self.flow == FSCalendarFlowHorizontal) {
+                [_collectionView setContentOffset:CGPointMake(scrollOffset * _collectionView.fs_width, 0) animated:animate];
+            } else if (self.flow == FSCalendarFlowVertical) {
+                [_collectionView setContentOffset:CGPointMake(0, scrollOffset * _collectionView.fs_height) animated:animate];
+            }
+            if (_header && !animate) {
+                _header.scrollOffset = scrollOffset;
+            }
+            _supressEvent = NO;
+
+            [self currentMonthDidChange];
+        });
     }
-    _supressEvent = NO;
 }
 
 
 #pragma mark - Private
 
-
 - (NSDate *)dateForIndexPath:(NSIndexPath *)indexPath
 {
-    NSDate *currentMonth = [_minimumDate fs_dateByAddingMonths:indexPath.section];
+    NSDate *currentMonth = [self.minimumDate fs_dateByAddingMonths:indexPath.section];
     NSDate *firstDayOfMonth = [NSDate fs_dateWithYear:currentMonth.fs_year
                                                 month:currentMonth.fs_month
                                                   day:1];
@@ -759,7 +778,7 @@
 
 - (NSIndexPath *)indexPathForDate:(NSDate *)date
 {
-    NSInteger section = [date fs_monthsFrom:_minimumDate];
+    NSInteger section = [date fs_monthsFrom:self.minimumDate];
     NSDate *firstDayOfMonth = [NSDate fs_dateWithYear:date.fs_year month:date.fs_month day:1];
     NSInteger numberOfPlaceholdersForPrev = ((firstDayOfMonth.fs_weekday - _firstWeekday) + 7) % 7 ? : 7;
     NSDate *firstDateOfPage = [firstDayOfMonth fs_dateBySubtractingDays:numberOfPlaceholdersForPrev];
@@ -813,6 +832,8 @@
     _header.scrollDirection = self.collectionViewFlowLayout.scrollDirection;
     _header.titleColor = _headerTitleColor;
     _header.titleFont = _headerTitleFont;
+    [_header setValue:self.minimumDate forKey:@"minimumDate"];
+    [_header setValue:self.maximumDate forKey:@"maximumDate"];
     [_header reloadData];
     
     CGFloat width = self.fs_width/_weekdays.count;
@@ -835,7 +856,7 @@
 
 - (BOOL)shouldSelectDate:(NSDate *)date
 {
-    if ([date fs_isBetween:_minimumDate andDate:_maximumDate])
+    if ([self isDateInRange:date])
     {
         if (_delegate && [_delegate respondsToSelector:@selector(calendar:shouldSelectDate:)]) {
             return [_delegate calendar:self shouldSelectDate:date];
@@ -843,10 +864,6 @@
         return YES;
     }
     return NO;
-}
-
-- (BOOL)isDatePlaceHolder: (NSDate *) date{
-    return ![date fs_isEqualToDateForMonth:_currentMonth];
 }
 
 - (void)didSelectDate:(NSDate *)date
@@ -883,46 +900,29 @@
 
 - (NSDate *)minimumDate
 {
-    if (_dataSource && [_dataSource respondsToSelector:@selector(minimumDateForCalendar:)]) {
-        _minimumDate = [_dataSource minimumDateForCalendar:self];
-    }
-    if (!_minimumDate) {
-        _minimumDate = [NSDate fs_dateWithYear:1970 month:1 day:1];
+    if (_minimumDate == nil){
+        if (_dataSource && [_dataSource respondsToSelector:@selector(minimumDateForCalendar:)]) {
+            _minimumDate = [_dataSource minimumDateForCalendar:self];
+        }
+        if (!_minimumDate) {
+            _minimumDate = [NSDate fs_dateWithYear:1970 month:1 day:1];
+        }
     }
     return _minimumDate;
 }
 
 - (NSDate *)maximumDate
 {
-    if (_dataSource && [_dataSource respondsToSelector:@selector(maximumDateForCalendar:)]) {
-        _maximumDate = [_dataSource maximumDateForCalendar:self];
-    }
-    if (!_maximumDate) {
-        _maximumDate = [NSDate fs_dateWithYear:2099 month:12 day:31];
+    if (_maximumDate == nil){
+        if (_dataSource && [_dataSource respondsToSelector:@selector(maximumDateForCalendar:)]) {
+            _maximumDate = [_dataSource maximumDateForCalendar:self];
+        }
+        if (!_maximumDate) {
+            _maximumDate = [NSDate fs_dateWithYear:2099 month:12 day:31];
+        }
     }
     return _maximumDate;
 }
-
-
-- (void) setMinimumDate:(NSDate *)minimumDate
-{
-    _minimumDate = [minimumDate fs_clampDateToComponents:(NSMonthCalendarUnit | NSYearCalendarUnit)];
-    self.header.minimumDate = _minimumDate;
-}
-
-- (void) setMaximumDate:(NSDate *)maximumDate
-{
-    NSDate * firstOfMonth = [maximumDate fs_clampDateToComponents:NSMonthCalendarUnit|NSYearCalendarUnit];
-    
-    NSDateComponents * offsetComponents = [[NSDateComponents alloc] init];
-    offsetComponents.month = 1;
-    offsetComponents.day = -1;
-    NSCalendar * calendar = [NSCalendar fs_sharedCalendar];
-    _maximumDate = [calendar dateByAddingComponents:offsetComponents toDate:firstOfMonth options:0];
-    self.header.maximumDate = _maximumDate;
-}
-
-
 
 @end
 

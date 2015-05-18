@@ -60,12 +60,25 @@ typedef NS_OPTIONS(NSInteger, FSCalendarCellState) {
 @property (weak,   nonatomic) IBOutlet id<FSCalendarDelegate>   delegate;
 @property (weak,   nonatomic) IBOutlet id<FSCalendarDataSource> dataSource;
 
-@property (copy,   nonatomic) NSDate *currentDate;
+@property (copy,   nonatomic) NSDate *today;
 @property (copy,   nonatomic) NSDate *selectedDate;
-@property (copy,   nonatomic) NSDate *currentMonth;
 
-@property (copy,   nonatomic) NSDate                            *minimumDate;
-@property (copy,   nonatomic) NSDate                            *maximumDate;
+
+/**
+ Must be set thru FSCalendarDataSource by implementing `minimumDateForCalendar:`.
+ */
+@property (copy,   readonly,  nonatomic) NSDate *minimumDate;
+
+/**
+ Must be set thru FSCalendarDataSource by implementing `maximumDateForCalendar:`.
+ */
+@property (copy,   readonly,  nonatomic) NSDate *maximumDate;
+
+/**
+ The month currently focused.
+ */
+@property (copy,   readonly,  nonatomic) NSDate *currentMonth;
+
 
 @property (assign, nonatomic) FSCalendarFlow       flow;
 @property (assign, nonatomic) IBInspectable NSUInteger           firstWeekday;
@@ -102,9 +115,10 @@ typedef NS_OPTIONS(NSInteger, FSCalendarCellState) {
 @property (strong, nonatomic) UIColor  *todayColor               UI_APPEARANCE_SELECTOR;
 
 - (void)reloadData;
-- (void)setSelectedDate:(NSDate *)selectedDate animate:(BOOL)animate;
 - (void)scrollToDate:(NSDate *)date;
 - (void)scrollToDate:(NSDate *)date animate:(BOOL)animate;
+- (void)setSelectedDate:(NSDate *)selectedDate animate:(BOOL)animate;
+
 @end
 
 

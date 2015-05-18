@@ -19,6 +19,9 @@
 
 @property (strong, nonatomic) NSCalendar *currentCalendar;
 @property (strong, nonatomic) SSLunarDate *lunarDate;
+@property (strong, nonatomic) NSDate * startDate;
+@property (strong, nonatomic) NSDate * endDate;
+@property (assign, nonatomic) BOOL hasLoaded;
 
 @end
 
@@ -34,18 +37,27 @@
     _firstWeekday = _calendar.firstWeekday;
 //    _calendar.firstWeekday = 2;
 //    _calendar.flow = FSCalendarFlowVertical;
-//    _calendar.currentMonth = [NSDate fs_dateWithYear:2015 month:2 day:1];
     
-    _calendar.minimumDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
-    _calendar.maximumDate = [NSDate fs_dateWithYear:2015 month:5 day:6];
-    _calendar.currentDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
-    _calendar.selectedDate = [NSDate new];
-    
+//    _calendar.minimumDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
+//    _calendar.maximumDate = [NSDate fs_dateWithYear:2015 month:5 day:6];
+//    _calendar.currentDate = [NSDate fs_dateWithYear:2015 month:5 day:5];
+//    _calendar.selectedDate = [NSDate new];
+    self.startDate = [NSDate fs_dateWithYear:2015 month:5 day:4];
+    self.endDate = [NSDate fs_dateWithYear:2015 month:5 day:4];
+
 }
 
 - (void) viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
-    [_calendar reloadData];
+    if (!_hasLoaded){
+        _hasLoaded = YES;
+        [_calendar scrollToDate:self.endDate];
+//        [_calendar reloadData];
+    }
+}
+
+- (void) viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
 }
 
 #pragma mark - FSCalendarDataSource
@@ -64,21 +76,21 @@
     return date.fs_day == 3;
 }
 
-//- (NSDate *)minimumDateForCalendar:(FSCalendar *)calendar
-//{
-//    return [NSDate fs_dateWithYear:2015 month:3 day:1];
-//}
-//
-//- (NSDate *)maximumDateForCalendar:(FSCalendar *)calendar
-//{
-//    return [NSDate fs_dateWithYear:2015 month:7 day:30];
-//}
+- (NSDate *)minimumDateForCalendar:(FSCalendar *)calendar
+{
+    return self.startDate;
+}
+
+- (NSDate *)maximumDateForCalendar:(FSCalendar *)calendar
+{
+    return self.endDate;
+}
 
 #pragma mark - FSCalendarDelegate
 
 - (BOOL)calendar:(FSCalendar *)calendar shouldSelectDate:(NSDate *)date
 {
-//    BOOL shouldSelect = date.fs_day != 7;
+    BOOL shouldSelect = date.fs_day != 7;
 //    if (!shouldSelect) {
 //        [[[UIAlertView alloc] initWithTitle:@"FSCalendar"
 //                                    message:[NSString stringWithFormat:@"FSCalendar delegate forbid %@  to be selected",[date fs_stringWithFormat:@"yyyy/MM/dd"]]
@@ -86,19 +98,20 @@
 //                          cancelButtonTitle:@"OK"
 //                          otherButtonTitles:nil, nil] show];
 //    }
-//    return shouldSelect;
+    return shouldSelect;
     
-    unsigned calendarUnit = NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear;
-    NSCalendar * currentCalendar = [NSCalendar currentCalendar];
-    NSDateComponents * dateCompontents = [currentCalendar components:calendarUnit fromDate:date];
-    NSDate * selectedDate =  [currentCalendar dateFromComponents:dateCompontents];
-    
-    dateCompontents = [currentCalendar components:calendarUnit fromDate:calendar.currentDate];
-    NSDate * currentDate = [currentCalendar dateFromComponents:dateCompontents];
-    if ([selectedDate compare:currentDate] == NSOrderedAscending){
-        return NO;
-    }
-    return YES;
+//    unsigned calendarUnit = NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear;
+//    NSCalendar * currentCalendar = [NSCalendar currentCalendar];
+//    NSDateComponents * dateCompontents = [currentCalendar components:calendarUnit fromDate:date];
+//    NSDate * selectedDate =  [currentCalendar dateFromComponents:dateCompontents];
+//    
+//    dateCompontents = [currentCalendar components:calendarUnit fromDate:calendar.currentDate];
+//    
+//    NSDate * currentDate = [currentCalendar dateFromComponents:dateCompontents];
+//    if ([selectedDate compare:currentDate] == NSOrderedAscending){
+//        return NO;
+//    }
+//    return YES;
  
 }
 
@@ -198,7 +211,8 @@
 - (void)setSelectedDate:(NSDate *)selectedDate
 {
     _calendar.selectedDate = selectedDate;
-//    [_calendar setSelectedDate:selectedDate animate:YES];
+//    self.endDate = [NSDate fs_dateWithYear:2015 month:5 day:24];
+//    [_calendar reloadData];
     
 }
 
